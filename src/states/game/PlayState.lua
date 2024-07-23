@@ -70,7 +70,14 @@ function PlayState:render()
     
     self.level:render()
 
-    self.player:render()
+    for y = 1, self.tileMap.height do
+        for x = 1, self.tileMap.width do
+            if self.tileMap.tiles[y][x].id == TILE_ID_GROUND then
+                self.player:render()
+            end
+        end
+    end
+
     love.graphics.pop()
     
     -- render score
