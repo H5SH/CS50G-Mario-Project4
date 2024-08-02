@@ -14,7 +14,9 @@ function LevelMaker.generate(width, height)
     local tiles = {}
     local entities = {}
     local objects = {}
-    local key_lock = false
+    local key = false
+    local lock = false
+    local keyCatched = false
 
     local tileID = TILE_ID_GROUND
 
@@ -80,7 +82,107 @@ function LevelMaker.generate(width, height)
                 tiles[5][x] = Tile(x, 5, tileID, topper, tileset, topperset)
                 tiles[6][x] = Tile(x, 6, tileID, nil, tileset, topperset)
                 tiles[7][x].topper = nil
+            elseif (lock == false and x == width) then
+                lock = true
+                table.insert(
+                    objects,
+                    GameObject {
+                        texture = 'keys-locks',
+                        x = (x - 1) * TILE_SIZE,
+                        y = (blockHeight + 1) * TILE_SIZE,
+                        width = 16,
+                        height = 16,
 
+                        frame = 5,
+                        collidable = true,
+                        hit = false,
+                        solid = true,
+                        onCollide = function()
+
+                        end
+                    }
+                )
+                -- and x == width - 1
+            elseif (key == false) then
+                key = true
+                table.insert(objects,
+                    -- jump block
+                    GameObject {
+                        texture = 'jump-blocks',
+                        x = (x - 1) * TILE_SIZE,
+                        y = (blockHeight - 1) * TILE_SIZE,
+                        width = 16,
+                        height = 16,
+
+                        -- make it a random variant
+                        frame = 5,
+                        collidable = true,
+                        hit = false,
+                        solid = true,
+
+                        -- collision function takes itself
+                        onCollide = function(obj)
+                            -- spawn a gem if we haven't already hit the block
+                            if not obj.hit then
+                                -- maintain reference so we can set it to nil
+                                local key = GameObject {
+                                    texture = 'keys-locks',
+                                    x = (x - 1) * TILE_SIZE,
+                                    y = (blockHeight - 1) * TILE_SIZE - 4,
+                                    width = 16,
+                                    height = 16,
+                                    frame = 1,
+                                    collidable = true,
+                                    consumable = true,
+                                    solid = false,
+
+                                    -- gem has its own function to add to the player's score
+                                    onConsume = function(obj)
+
+                                        if not obj.hit then
+                                            local post = GameObject {
+                                                texture = 'flags-posts',
+                                                x = (x - 1) * TILE_SIZE,
+                                                y = (blockHeight + 1) * TILE_SIZE,
+                                                width = 16,
+                                                height = 48,
+                                                frame = math.random(6),
+                                                consumable = true,
+                                                solid = false,
+
+                                                onConsume = function ()
+                                                    gStateMachine('play', {width = width + 20})
+                                                end
+                                            }
+
+                                            Timer.tween(0.5, {
+                                                [post] = { y = (blockHeight - 1) * TILE_SIZE }
+                                            })
+
+                                            gSounds['powerup-reveal']:play()
+
+                                            table.insert(objects, post)
+
+                                            obj.hit = true
+                                        end
+                                    end
+                                }
+
+                                -- make the gem move up from the block and play a sound
+                                Timer.tween(0.1, {
+                                    [key] = { y = (blockHeight - 2) * TILE_SIZE }
+                                })
+                                gSounds['powerup-reveal']:play()
+
+                                table.insert(objects, key)
+
+                                obj.hit = true
+                            end
+
+                            gSounds['empty-block']:play()
+                        end
+                    }
+                )
                 -- chance to generate bushes
             elseif math.random(8) == 1 then
                 table.insert(objects,
@@ -156,27 +258,6 @@ function LevelMaker.generate(width, height)
                     }
                 )
             end
-        end
-
-        if (x == width - 1 and key_lock == false) then
-            key_lock = true
-            GameObject {
-                texture = 'keys-lock',
-                x = (x - 1) * TILE_SIZE,
-                y = (blockHeight - 1) * TILE_SIZE - 4,
-                width = 16,
-                height = 16,
-                frame = 1,
-                collidable = true,
-                consumable = true,
-                solid = false,
-
-                -- gem has its own function to add to the player's score
-                onConsume = function(player, object)
-                    gSounds['pickup']:play()
-                    player.score = player.score + 100
-                end
-            }
         end
     end
 
