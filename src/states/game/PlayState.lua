@@ -7,15 +7,18 @@
 
 PlayState = Class{__includes = BaseState}
 
+
 function PlayState:init()
     self.camX = 0
     self.camY = 0
     -- 100 by default
-    self.level = LevelMaker.generate(100, 10)
+end
+
+function PlayState:enter(params)
+    self.level = LevelMaker.generate(params.width or 100, 10)
     self.tileMap = self.level.tileMap
     self.background = math.random(3)
     self.backgroundX = 0
-
     self.gravityOn = true
     self.gravityAmount = 6
 
@@ -23,6 +26,7 @@ function PlayState:init()
         x = 0, y = 0,
         width = 16, height = 20,
         texture = 'green-alien',
+        score = params.score,
         stateMachine = StateMachine {
             ['idle'] = function() return PlayerIdleState(self.player) end,
             ['walking'] = function() return PlayerWalkingState(self.player) end,
@@ -38,9 +42,7 @@ function PlayState:init()
     self.player:changeState('falling')
 end
 
-function PlayState:enter(params)
-    self.level = LevelMaker:generate(params.width, 10)
-end
+
 
 function PlayState:update(dt)
     Timer.update(dt)

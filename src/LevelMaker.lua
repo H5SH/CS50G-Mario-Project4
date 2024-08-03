@@ -82,28 +82,28 @@ function LevelMaker.generate(width, height)
                 tiles[5][x] = Tile(x, 5, tileID, topper, tileset, topperset)
                 tiles[6][x] = Tile(x, 6, tileID, nil, tileset, topperset)
                 tiles[7][x].topper = nil
-            elseif (lock == false and x == width) then
-                lock = true
-                table.insert(
-                    objects,
-                    GameObject {
-                        texture = 'keys-locks',
-                        x = (x - 1) * TILE_SIZE,
-                        y = (blockHeight + 1) * TILE_SIZE,
-                        width = 16,
-                        height = 16,
+            -- elseif (lock == false and x == width) then
+            --     lock = true
+            --     table.insert(
+            --         objects,
+            --         GameObject {
+            --             texture = 'keys-locks',
+            --             x = (x - 1) * TILE_SIZE,
+            --             y = (blockHeight + 1) * TILE_SIZE,
+            --             width = 16,
+            --             height = 16,
 
-                        frame = 5,
-                        collidable = true,
-                        hit = false,
-                        solid = true,
-                        onCollide = function()
+            --             frame = 5,
+            --             collidable = true,
+            --             hit = false,
+            --             solid = true,
+            --             onCollide = function()
 
-                        end
-                    }
-                )
+            --             end
+            --         }
+            --     )
                 -- and x == width - 1
-            elseif (key == false) then
+            elseif (key == false and x == width - 5) then
                 key = true
                 table.insert(objects,
                     -- jump block
@@ -142,7 +142,7 @@ function LevelMaker.generate(width, height)
                                         if not obj.hit then
                                             local post = GameObject {
                                                 texture = 'flags-posts',
-                                                x = (x - 1) * TILE_SIZE,
+                                                x = (width - 1) * TILE_SIZE,
                                                 y = (blockHeight + 1) * TILE_SIZE,
                                                 width = 16,
                                                 height = 48,
@@ -150,8 +150,11 @@ function LevelMaker.generate(width, height)
                                                 consumable = true,
                                                 solid = false,
 
-                                                onConsume = function ()
-                                                    gStateMachine('play', {width = width + 20})
+                                                onConsume = function (player, obj)
+                                                    gStateMachine:change('play', {
+                                                        ['score'] = player.score,
+                                                        ['width'] = width + 20
+                                                    })
                                                 end
                                             }
 
@@ -248,6 +251,7 @@ function LevelMaker.generate(width, height)
                                     gSounds['powerup-reveal']:play()
 
                                     table.insert(objects, gem)
+
                                 end
 
                                 obj.hit = true
